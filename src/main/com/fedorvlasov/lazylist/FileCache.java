@@ -3,11 +3,12 @@ package com.fedorvlasov.lazylist;
 import java.io.File;
 
 import android.content.Context;
+import android.os.Environment;
 
-//TODO Move file cache to /Android/data/<package_name>/files/
 //TODO Refactor saving files here
 /**
- * Class to handling saving and retrieving files to and from the External Storage or application storage
+ * Class to handling saving and retrieving files to and from the External Storage or application 
+ * storage
  * 
  * @author Fedor Vlasov <http://www.fedorvlasov.com>
  * @author slightly modified by Grantland Chew <http://grantland.me>
@@ -16,10 +17,17 @@ public class FileCache {
     
     private File mCacheDir;
     
+    /**
+     * Creates cache directory. Uses external storage if mounted, internal cache if not.
+     * @param context
+     */
     public FileCache(Context context) {
         //Find the dir to save cached images
-        if (android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED)) {
-            mCacheDir = new File(android.os.Environment.getExternalStorageDirectory(),"LazyList");
+        if (Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED)) {
+        	// External Cache Dir: sdcard/Android/data/<packageName>/cache/
+        	String dir = Environment.getExternalStorageDirectory().getPath()
+                	+ "/Android/data/" + context.getPackageName();
+            mCacheDir = new File(dir, "cache");
         } else {
             mCacheDir = context.getCacheDir();
         }
