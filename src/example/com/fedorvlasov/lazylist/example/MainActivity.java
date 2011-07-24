@@ -1,4 +1,4 @@
-package com.fedorvlasov.lazylist;
+package com.fedorvlasov.lazylist.example;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -7,41 +7,42 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 
+import com.fedorvlasov.lazylist.R;
+
 public class MainActivity extends Activity {
     
-    ListView list;
-    LazyAdapter adapter;
+    ListView mList;
+    LazyAdapter mAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        list=(ListView)findViewById(R.id.list);
-        adapter=new LazyAdapter(this, mStrings);
-        list.setAdapter(adapter);
+        mList = (ListView)findViewById(R.id.list);
+        mAdapter = new LazyAdapter(this, mStrings);
+        mList.setAdapter(mAdapter);
         
-        Button b=(Button)findViewById(R.id.button1);
-        b.setOnClickListener(listener);
+        Button b = (Button)findViewById(R.id.button1);
+        b.setOnClickListener(mOnClickListener);
     }
     
     @Override
-    public void onDestroy()
-    {
-        adapter.imageLoader.stopThread();
-        list.setAdapter(null);
+    public void onDestroy() {
+        mAdapter.mImageLoader.stopThread();
+        mList.setAdapter(null);
         super.onDestroy();
     }
     
-    public OnClickListener listener=new OnClickListener(){
+    public OnClickListener mOnClickListener = new OnClickListener() {
         @Override
-        public void onClick(View arg0) {
-            adapter.imageLoader.clearCache();
-            adapter.notifyDataSetChanged();
+        public void onClick(View view) {
+            mAdapter.mImageLoader.clearCache();
+            mAdapter.notifyDataSetChanged();
         }
     };
     
-    private String[] mStrings={
+    private String[] mStrings = {
             "http://a3.twimg.com/profile_images/670625317/aam-logo-v3-twitter.png",
             "http://a3.twimg.com/profile_images/740897825/AndroidCast-350_normal.png",
             "http://a3.twimg.com/profile_images/121630227/Droid_normal.jpg",
