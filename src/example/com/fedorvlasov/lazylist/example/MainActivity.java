@@ -10,7 +10,7 @@ import android.widget.ListView;
 import com.fedorvlasov.lazylist.R;
 
 public class MainActivity extends Activity {
-    
+
     ListView mList;
     LazyAdapter mAdapter;
 
@@ -18,22 +18,22 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        
+
         mList = (ListView)findViewById(R.id.list);
         mAdapter = new LazyAdapter(this, mStrings);
         mList.setAdapter(mAdapter);
-        
+
         Button b = (Button)findViewById(R.id.button1);
         b.setOnClickListener(mOnClickListener);
     }
-    
+
     @Override
     public void onDestroy() {
         mAdapter.mImageLoader.stopThread();
         mList.setAdapter(null);
         super.onDestroy();
     }
-    
+
     public OnClickListener mOnClickListener = new OnClickListener() {
         @Override
         public void onClick(View view) {
@@ -41,7 +41,7 @@ public class MainActivity extends Activity {
             mAdapter.notifyDataSetChanged();
         }
     };
-    
+
     private String[] mStrings = {
             "http://a3.twimg.com/profile_images/670625317/aam-logo-v3-twitter.png",
             "http://a3.twimg.com/profile_images/740897825/AndroidCast-350_normal.png",

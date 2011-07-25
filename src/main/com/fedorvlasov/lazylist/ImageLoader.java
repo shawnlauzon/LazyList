@@ -19,55 +19,58 @@ import android.graphics.BitmapFactory;
 import android.widget.ImageView;
 
 public class ImageLoader {
-    
-    private MemoryCache mMemoryCache = new MemoryCache();
+
+    private MemoryCache mMemoryCache;
     private FileCache mFileCache;
     private Map<ImageView, String> mImageViews = Collections.synchronizedMap(new WeakHashMap<ImageView, String>());
     private PhotosLoader mPhotoLoaderThread = new PhotosLoader();
     private PhotosQueue mPhotosQueue = new PhotosQueue();
-    
+
     public ImageLoader(Context context) {
         //Make the background thead low priority. This way it will not affect the UI performance
         mPhotoLoaderThread.setPriority(Thread.NORM_PRIORITY-1);
-        
+
+        mMemoryCache = new MemoryCache();
         mFileCache = new FileCache(context);
     }
-    
-    final int stub_id=R.drawable.stub;
-    public void DisplayImage(String url, Activity activity, ImageView imageView) {
+
+    final int stub_id = R.drawable.stub;
+    public void displayImage(String url, Activity activity, ImageView imageView) {
         mImageViews.put(imageView, url);
-        Bitmap bitmap=mMemoryCache.get(url);
-        if(bitmap!=null) {
+        Bitmap bitmap = mMemoryCache.get(url);
+
+        if(bitmap != null) {
             imageView.setImageBitmap(bitmap);
         } else {
             queuePhoto(url, activity, imageView);
             imageView.setImageResource(stub_id);
-        }    
+        }
     }
-        
+
     private void queuePhoto(String url, Activity activity, ImageView imageView) {
-        //This ImageView may be used for other images before. So there may be some old tasks in the queue. We need to discard them. 
+        // This ImageView may be used for other images before. So there may be some old tasks in the queue. We need to discard them.
         mPhotosQueue.clean(imageView);
         PhotoToLoad p = new PhotoToLoad(url, imageView);
         synchronized(mPhotosQueue.mPhotosToLoad){
             mPhotosQueue.mPhotosToLoad.push(p);
             mPhotosQueue.mPhotosToLoad.notifyAll();
         }
-        
-        //start thread if it's not started yet
+
+        // Start thread if it's not started yet
         if(mPhotoLoaderThread.getState() == Thread.State.NEW)
             mPhotoLoaderThread.start();
     }
-    
+
+    /** Gets run on PhotoLoader Thread */
     private Bitmap getBitmap(String url) {
         File f = mFileCache.getFile(url);
-        
-        //from SD cache
+
+        // Load from file cache
         Bitmap b = decodeFile(f);
         if(b != null)
             return b;
-        
-        //from web
+
+        // Load from web
         try {
             Bitmap bitmap = null;
             URL imageUrl = new URL(url);
@@ -93,10 +96,10 @@ public class ImageLoader {
             BitmapFactory.Options o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
             BitmapFactory.decodeStream(new FileInputStream(f),null,o);
-            
+
             //Find the correct scale value. It should be the power of 2.
             final int REQUIRED_SIZE = 70;
-            int width_tmp = o.outWidth, 
+            int width_tmp = o.outWidth,
             	height_tmp = o.outHeight;
             int scale=1;
             while(true){
@@ -106,7 +109,7 @@ public class ImageLoader {
                 height_tmp /= 2;
                 scale *= 2;
             }
-            
+
             //decode with inSampleSize
             BitmapFactory.Options o2 = new BitmapFactory.Options();
             o2.inSampleSize = scale;
@@ -116,7 +119,7 @@ public class ImageLoader {
         }
         return null;
     }
-    
+
     public void stopThread() {
         mPhotoLoaderThread.interrupt();
     }
@@ -125,21 +128,21 @@ public class ImageLoader {
         mMemoryCache.clear();
         mFileCache.clear();
     }
-    
+
     //Task for the queue
     private class PhotoToLoad {
         public String url;
         public ImageView imageView;
         public PhotoToLoad(String u, ImageView i){
-            url = u; 
+            url = u;
             imageView = i;
         }
     }
-    
+
     //stores list of photos to download
     class PhotosQueue {
         private Stack<PhotoToLoad> mPhotosToLoad = new Stack<PhotoToLoad>();
-        
+
         //removes all instances of this ImageView
         public void clean(ImageView image) {
             for(int j = 0; j<mPhotosToLoad.size(); /* nothing */) {
@@ -151,7 +154,7 @@ public class ImageLoader {
             }
         }
     }
-    
+
     class PhotosLoader extends Thread {
         public void run() {
             try {
@@ -162,25 +165,25 @@ public class ImageLoader {
                             mPhotosQueue.mPhotosToLoad.wait();
                         }
                     }
-                    
+
                     // Load a photo!
                     if(mPhotosQueue.mPhotosToLoad.size() != 0) {
                         PhotoToLoad photoToLoad;
                         synchronized(mPhotosQueue.mPhotosToLoad) {
                             photoToLoad = mPhotosQueue.mPhotosToLoad.pop();
                         }
-                        
+
                         Bitmap bmp = getBitmap(photoToLoad.url);
                         mMemoryCache.put(photoToLoad.url, bmp);
                         String tag = mImageViews.get(photoToLoad.imageView);
-                        
+
                         if(tag!=null && tag.equals(photoToLoad.url)) {
                             BitmapDisplayer bd = new BitmapDisplayer(bmp, photoToLoad.imageView);
                             Activity a = (Activity)photoToLoad.imageView.getContext();
                             a.runOnUiThread(bd);
                         }
                     }
-                    
+
                     if(Thread.interrupted()) {
                         break;
                     }
@@ -190,7 +193,7 @@ public class ImageLoader {
             }
         }
     }
-    
+
     //Used to display bitmap in the UI thread
     class BitmapDisplayer implements Runnable
     {
@@ -200,7 +203,7 @@ public class ImageLoader {
         	bitmap = b;
         	imageView = i;
     	}
-        
+
         public void run() {
             if(bitmap != null) {
                 imageView.setImageBitmap(bitmap);

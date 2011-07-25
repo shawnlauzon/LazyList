@@ -13,12 +13,12 @@ import com.fedorvlasov.lazylist.ImageLoader;
 import com.fedorvlasov.lazylist.R;
 
 public class LazyAdapter extends BaseAdapter {
-    
+
     private Activity mActivity;
     private String[] mData;
     private static LayoutInflater mInflater = null;
-    public ImageLoader mImageLoader; 
-    
+    public ImageLoader mImageLoader;
+
     public LazyAdapter(Activity a, String[] d) {
         mActivity = a;
         mData = d;
@@ -37,7 +37,7 @@ public class LazyAdapter extends BaseAdapter {
     public long getItemId(int position) {
         return position;
     }
-    
+
     public View getView(int position, View convertView, ViewGroup parent) {
         View vi = convertView;
         if(convertView == null) {
@@ -47,7 +47,7 @@ public class LazyAdapter extends BaseAdapter {
         TextView text = (TextView)vi.findViewById(R.id.text);;
         ImageView image = (ImageView)vi.findViewById(R.id.image);
         text.setText("item "+position);
-        mImageLoader.DisplayImage(mData[position], mActivity, image);
+        mImageLoader.displayImage(mData[position], mActivity, image);
         return vi;
     }
 }
