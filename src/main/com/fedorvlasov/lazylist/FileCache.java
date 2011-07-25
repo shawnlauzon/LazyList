@@ -6,7 +6,6 @@ import java.net.URLEncoder;
 import android.content.Context;
 import android.os.Environment;
 
-//TODO Refactor saving files here
 /**
  * Class to handling saving and retrieving files to and from the External Storage or application
  * storage

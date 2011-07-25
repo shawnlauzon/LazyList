@@ -18,6 +18,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.widget.ImageView;
 
+/**
+ * Class that handles loading images from the web and caching them in memory and in the filesystem
+ *
+ * @author Fedor Vlasov <http://www.fedorvlasov.com>
+ * @author slightly modified by Grantland Chew <http://grantland.me>
+ */
 public class ImageLoader {
 
     private MemoryCache mMemoryCache;
@@ -61,7 +67,7 @@ public class ImageLoader {
             mPhotoLoaderThread.start();
     }
 
-    /** Gets run on PhotoLoader Thread */
+    /** Runs on PhotoLoader Thread */
     private Bitmap getBitmap(String url) {
         File f = mFileCache.getFile(url);
 
@@ -92,7 +98,7 @@ public class ImageLoader {
         }
     }
 
-    //decodes image and scales it to reduce memory consumption
+    /** Decodes image and scales it to reduce memory consumption */
     private Bitmap decodeFile(File f){
         try {
             //decode image size
@@ -132,7 +138,7 @@ public class ImageLoader {
         mFileCache.clear();
     }
 
-    //Task for the queue
+    /** Task for the queue */
     private class PhotoToLoad {
         public String url;
         public ImageView imageView;
@@ -142,7 +148,7 @@ public class ImageLoader {
         }
     }
 
-    //stores list of photos to download
+    /** Stores list of photos to download */
     class PhotosQueue {
         private Stack<PhotoToLoad> mPhotosToLoad = new Stack<PhotoToLoad>();
 
@@ -158,6 +164,7 @@ public class ImageLoader {
         }
     }
 
+    /** Thread to load images */
     class PhotosLoader extends Thread {
         public void run() {
             try {
@@ -197,7 +204,7 @@ public class ImageLoader {
         }
     }
 
-    //Used to display bitmap in the UI thread
+    /** Runnable to display bitmap in the UI thread */
     class BitmapDisplayer implements Runnable
     {
         Bitmap bitmap;
@@ -215,5 +222,4 @@ public class ImageLoader {
             }
         }
     }
-
 }
