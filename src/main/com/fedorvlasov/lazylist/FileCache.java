@@ -1,6 +1,7 @@
 package com.fedorvlasov.lazylist;
 
 import java.io.File;
+import java.net.URLEncoder;
 
 import android.content.Context;
 import android.os.Environment;
@@ -37,9 +38,8 @@ public class FileCache {
         }
     }
 
-    public File getFile(String url){
-        //I identify images by hashcode. Not a perfect solution, good for the demo.
-        String filename = String.valueOf(url.hashCode());
+    public File getFile(String key){
+        String filename = URLEncoder.encode(key);
         File f = new File(mCacheDir, filename);
         return f;
     }

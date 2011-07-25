@@ -11,17 +11,17 @@ public class MemoryCache {
     	mCache = new HashMap<String, SoftReference<Bitmap>>();
     }
 
-    public Bitmap get(String id) {
-        if(!mCache.containsKey(id)) {
+    public Bitmap get(String key) {
+        if(!mCache.containsKey(key)) {
             return null;
         }
 
-        SoftReference<Bitmap> ref = mCache.get(id);
+        SoftReference<Bitmap> ref = mCache.get(key);
         return ref.get();
     }
 
-    public void put(String id, Bitmap bitmap) {
-        mCache.put(id, new SoftReference<Bitmap>(bitmap));
+    public void put(String key, Bitmap bitmap) {
+        mCache.put(key, new SoftReference<Bitmap>(bitmap));
     }
 
     public void clear() {

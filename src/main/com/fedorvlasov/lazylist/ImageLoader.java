@@ -66,21 +66,24 @@ public class ImageLoader {
         File f = mFileCache.getFile(url);
 
         // Load from file cache
-        Bitmap b = decodeFile(f);
-        if(b != null)
-            return b;
+        Bitmap bitmap = decodeFile(f);
+        if (bitmap != null) {
+            return bitmap;
+        }
 
         // Load from web
         try {
-            Bitmap bitmap = null;
             URL imageUrl = new URL(url);
             HttpURLConnection conn = (HttpURLConnection)imageUrl.openConnection();
             conn.setConnectTimeout(30000);
             conn.setReadTimeout(30000);
             InputStream is = conn.getInputStream();
+
+            // Save to file
             OutputStream os = new FileOutputStream(f);
             Utils.copyStream(is, os);
             os.close();
+
             bitmap = decodeFile(f);
             return bitmap;
         } catch (Exception ex){
@@ -101,8 +104,8 @@ public class ImageLoader {
             final int REQUIRED_SIZE = 70;
             int width_tmp = o.outWidth,
             	height_tmp = o.outHeight;
-            int scale=1;
-            while(true){
+            int scale = 1;
+            while (true) {
                 if(width_tmp/2<REQUIRED_SIZE || height_tmp/2<REQUIRED_SIZE)
                     break;
                 width_tmp /= 2;
