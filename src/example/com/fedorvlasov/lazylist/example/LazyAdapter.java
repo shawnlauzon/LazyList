@@ -39,15 +39,38 @@ public class LazyAdapter extends BaseAdapter {
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
-        View vi = convertView;
-        if(convertView == null) {
-            vi = mInflater.inflate(R.layout.item, null);
+    	// A ViewHolder keeps references to children views to avoid unneccessary calls
+        // to findViewById() on each row.
+        ViewHolder holder;
+
+        // When convertView is not null, we can reuse it directly, there is no need
+        // to reinflate it. We only inflate a new View when the convertView supplied
+        // by ListView is null.
+        if (convertView == null) {
+            convertView = mInflater.inflate(R.layout.item, null);
+
+            // Creates a ViewHolder and store references to the two children views
+            // we want to bind data to.
+            holder = new ViewHolder();
+            holder.text = (TextView) convertView.findViewById(R.id.text);
+            holder.image = (ImageView) convertView.findViewById(R.id.image);
+
+            convertView.setTag(holder);
+        } else {
+            // Get the ViewHolder back to get fast access to the TextView
+            // and the ImageView.
+            holder = (ViewHolder) convertView.getTag();
         }
 
-        TextView text = (TextView)vi.findViewById(R.id.text);;
-        ImageView image = (ImageView)vi.findViewById(R.id.image);
-        text.setText("item "+position);
-        mImageLoader.displayImage(mData[position], mActivity, image);
-        return vi;
+        // Bind the data efficiently with the holder.
+        holder.text.setText("item " + position);
+        mImageLoader.displayImage(mData[position], mActivity, holder.image);
+
+        return convertView;
+    }
+
+    private static class ViewHolder {
+        TextView text;
+        ImageView image;
     }
 }
