@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Stack;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -26,9 +28,9 @@ import android.widget.ImageView;
  */
 public class ImageLoader {
 
-    private MemoryCache mMemoryCache;
+    protected MemoryCache mMemoryCache;
     private FileCache mFileCache;
-    private Map<ImageView, String> mImageViews = Collections.synchronizedMap(new WeakHashMap<ImageView, String>());
+    protected Map<ImageView, String> mImageViews = Collections.synchronizedMap(new WeakHashMap<ImageView, String>());
     private PhotosLoader mPhotoLoaderThread = new PhotosLoader();
     private PhotosQueue mPhotosQueue = new PhotosQueue();
 
@@ -40,25 +42,22 @@ public class ImageLoader {
         mFileCache = new FileCache(context);
     }
 
-    final int stub_id = R.drawable.stub;
-    public void displayImage(String url, Activity activity, ImageView imageView) {
+    public void displayImage(String url, ImageView imageView) {
         mImageViews.put(imageView, url);
         Bitmap bitmap = mMemoryCache.get(url);
 
         if(bitmap != null) {
             imageView.setImageBitmap(bitmap);
         } else {
-            queuePhoto(url, activity, imageView);
-            imageView.setImageResource(stub_id);
+        	queueImage(new PhotoToLoad(url, imageView, new HttpCallable(url)));
         }
     }
 
-    private void queuePhoto(String url, Activity activity, ImageView imageView) {
+    protected void queueImage(PhotoToLoad photoToLoad) {
         // This ImageView may be used for other images before. So there may be some old tasks in the queue. We need to discard them.
-        mPhotosQueue.clean(imageView);
-        PhotoToLoad p = new PhotoToLoad(url, imageView);
+        mPhotosQueue.clean(photoToLoad.imageView);
         synchronized(mPhotosQueue.mPhotosToLoad){
-            mPhotosQueue.mPhotosToLoad.push(p);
+            mPhotosQueue.mPhotosToLoad.push(photoToLoad);
             mPhotosQueue.mPhotosToLoad.notifyAll();
         }
 
@@ -68,8 +67,8 @@ public class ImageLoader {
     }
 
     /** Runs on PhotoLoader Thread */
-    private Bitmap getBitmap(String url) {
-        File f = mFileCache.getFile(url);
+    private Bitmap getBitmap(PhotoToLoad photoToLoad) {
+        File f = mFileCache.getFile(photoToLoad.key);
 
         // Load from file cache
         Bitmap bitmap = decodeFile(f);
@@ -79,11 +78,7 @@ public class ImageLoader {
 
         // Load from web
         try {
-            URL imageUrl = new URL(url);
-            HttpURLConnection conn = (HttpURLConnection)imageUrl.openConnection();
-            conn.setConnectTimeout(30000);
-            conn.setReadTimeout(30000);
-            InputStream is = conn.getInputStream();
+            InputStream is = photoToLoad.callable.call();
 
             // Save to file
             OutputStream os = new FileOutputStream(f);
@@ -92,8 +87,11 @@ public class ImageLoader {
 
             bitmap = decodeFile(f);
             return bitmap;
-        } catch (Exception ex){
-           ex.printStackTrace();
+        } catch (FileNotFoundException e) {
+        	e.printStackTrace();
+        	return null;
+        } catch (Exception e){
+           e.printStackTrace();
            return null;
         }
     }
@@ -139,13 +137,33 @@ public class ImageLoader {
     }
 
     /** Task for the queue */
-    private class PhotoToLoad {
-        public String url;
+    protected class PhotoToLoad {
+        public String key;
         public ImageView imageView;
-        public PhotoToLoad(String u, ImageView i){
-            url = u;
+        public Callable<InputStream> callable;
+
+        public PhotoToLoad(String key, ImageView i, Callable<InputStream> c){
+            this.key = key;
             imageView = i;
+            callable = c;
         }
+    }
+
+    private class HttpCallable implements Callable<InputStream> {
+    	private String url;
+
+    	public HttpCallable(String url) {
+    		this.url = url;
+    	}
+
+		@Override
+		public InputStream call() throws Exception {
+            URL imageUrl = new URL(url);
+            HttpURLConnection conn = (HttpURLConnection)imageUrl.openConnection();
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(30000);
+            return conn.getInputStream();
+		}
     }
 
     /** Stores list of photos to download */
@@ -183,11 +201,11 @@ public class ImageLoader {
                             photoToLoad = mPhotosQueue.mPhotosToLoad.pop();
                         }
 
-                        Bitmap bmp = getBitmap(photoToLoad.url);
-                        mMemoryCache.put(photoToLoad.url, bmp);
+                        Bitmap bmp = getBitmap(photoToLoad);
+                        mMemoryCache.put(photoToLoad.key, bmp);
                         String tag = mImageViews.get(photoToLoad.imageView);
 
-                        if(tag!=null && tag.equals(photoToLoad.url)) {
+                        if(tag != null && tag.equals(photoToLoad.key)) {
                             BitmapDisplayer bd = new BitmapDisplayer(bmp, photoToLoad.imageView);
                             Activity a = (Activity)photoToLoad.imageView.getContext();
                             a.runOnUiThread(bd);
@@ -217,8 +235,6 @@ public class ImageLoader {
         public void run() {
             if(bitmap != null) {
                 imageView.setImageBitmap(bitmap);
-            } else {
-                imageView.setImageResource(stub_id);
             }
         }
     }
