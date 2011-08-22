@@ -64,7 +64,7 @@ public class LazyAdapter extends BaseAdapter {
 
         // Bind the data efficiently with the holder.
         holder.text.setText("item " + position);
-        mImageLoader.displayImage(mData[position], mActivity, holder.image);
+//        mImageLoader.displayImage(mData[position], mActivity, holder.image);
 
         return convertView;
     }
