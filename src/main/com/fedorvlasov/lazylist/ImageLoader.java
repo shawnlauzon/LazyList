@@ -53,6 +53,17 @@ public class ImageLoader {
         }
     }
 
+    public void displayImage(String id, Callable<InputStream> callable, ImageView imageView) {
+        mImageViews.put(imageView, id);
+        Bitmap bitmap = mMemoryCache.get(id);
+
+        if(bitmap != null) {
+            imageView.setImageBitmap(bitmap);
+        } else {
+        	queueImage(new PhotoToLoad(id, imageView, callable));
+        }
+    }
+
     protected void queueImage(PhotoToLoad photoToLoad) {
         // This ImageView may be used for other images before. So there may be some old tasks in the queue. We need to discard them.
         mPhotosQueue.clean(photoToLoad.imageView);
